@@ -11,6 +11,7 @@ import time
 # from colorama import Fore, Back, Style
 import secrets
 import string
+from datetime import date
 
 
 bot = telebot.TeleBot("5694829327:AAE6Sz6xEsbN7QHeq8-QjiaPtUtu-tUAOW0")
@@ -59,15 +60,30 @@ def recovery_mail(message):
     bot.register_next_step_handler(mesg, recovery_idphoto)
 def recovery_idphoto(message):
     data.add({"mail": message.text})
-    photo = open("studentid.png",'rb')
+    photo = open("studentid.jpg",'rb')
     textmesg = f'Теперь введите номер студенческого билета, чтобы найти его, посмотрите на фотографию'
-    mesg = bot.send_photo(message.chat.id, photo, caption = txtmesg, parse_mode='MarkdownV2' )
+    mesg = bot.send_photo(message.chat.id, photo, caption = textmesg, parse_mode='MarkdownV2' )
     bot.register_next_step_handler(mesg, recovery_accepting)
-def recovery_accepting()
+def recovery_accepting(message):
     data.add({"id": message.text})
     bot.send_message(message.chat.id, f"Заявка на восстановление пароля передана администрации. Ожидайте")
     adminID = 1594231051
-    bot.send_message(adminID, f"Заявка на восстановление пароля\n Почтв")
+    mail = data.data['mail']
+    id = data.data['id']
+    bot.send_message(adminID, f"""
+    *Заявка* на восстановление пароля
+    *Почта* - `{mail}`
+    *Номер* - `{id}`
+    *TGUN* - @{message.from_user.username}
+    *TGID* - `{message.from_user.id}`
+    """, parse_mode='Markdown')
+
+@bot.message_handler(commands=['prjlist'])
+def prjlist(message):
+    today = date.today()
+    bot.send_message(message.chat.id, f'''Актуальные на *{today}* проекты:
+    [Почтовый ТГ бот](https://t.me/mailcrt_bot)
+    ''', parse_mode='Markdown')
 bot.polling(none_stop=True, interval=0)
 try:
     bot.polling(none_stop=True)
