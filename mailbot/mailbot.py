@@ -52,9 +52,22 @@ def register_end(message):
     Ваша новая почта  {data.data['name']}\\.{data.data['surname']}@radiotech\\.su  Пароль \\- ||{password}||"""
     #print(text)
     bot.send_message(message.chat.id, text, parse_mode='MarkdownV2')
-# @bot.message_handler(commands=['recovery'])
 
-
+@bot.message_handler(commands=['recovery'])
+def recovery_mail(message):
+    mesg = bot.send_message(message.chat.id, f'Вас понял. Для заявки на восстановление почты введите свой адрес электронной почты вида name.surname@radiotech.su')
+    bot.register_next_step_handler(mesg, recovery_idphoto)
+def recovery_idphoto(message):
+    data.add({"mail": message.text})
+    photo = open("studentid.png",'rb')
+    textmesg = f'Теперь введите номер студенческого билета, чтобы найти его, посмотрите на фотографию'
+    mesg = bot.send_photo(message.chat.id, photo, caption = txtmesg, parse_mode='MarkdownV2' )
+    bot.register_next_step_handler(mesg, recovery_accepting)
+def recovery_accepting()
+    data.add({"id": message.text})
+    bot.send_message(message.chat.id, f"Заявка на восстановление пароля передана администрации. Ожидайте")
+    adminID = 1594231051
+    bot.send_message(adminID, f"Заявка на восстановление пароля\n Почтв")
 bot.polling(none_stop=True, interval=0)
 try:
     bot.polling(none_stop=True)
