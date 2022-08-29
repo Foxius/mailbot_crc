@@ -60,7 +60,7 @@ def recovery_mail(message):
     bot.register_next_step_handler(mesg, recovery_idphoto)
 def recovery_idphoto(message):
     data.add({"mail": message.text})
-    photo = open("studentid.jpg",'rb')
+    photo = open("studentid.png",'rb')
     textmesg = f'Теперь введите номер студенческого билета, чтобы найти его, посмотрите на фотографию'
     mesg = bot.send_photo(message.chat.id, photo, caption = textmesg, parse_mode='MarkdownV2' )
     bot.register_next_step_handler(mesg, recovery_accepting)
