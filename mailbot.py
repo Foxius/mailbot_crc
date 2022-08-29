@@ -1,18 +1,16 @@
 import telebot
-import requests # Модуль для обработки URL
-# from bs4 import BeautifulSoup # Модуль для работы с HTML
-# import time # Модуль для остановки программы
 import smtplib # Модуль для работы с почтой
 from telebot import types
-# from openpyxl import load_workbook
-# from openpyxl.drawing.image import Image
+from openpyxl import load_workbook
 import time
 # import colorama
 # from colorama import Fore, Back, Style
 import secrets
 import string
 from datetime import date
-
+import pandas as pd
+from pandas import DataFrame
+from transliterate import translit
 
 bot = telebot.TeleBot("5694829327:AAE6Sz6xEsbN7QHeq8-QjiaPtUtu-tUAOW0")
 
@@ -38,22 +36,34 @@ def start(message):
 
 @bot.message_handler(commands=['register'])
 def register_name(message):
-    mesg = bot.send_message(message.chat.id, f"Для начала введите своё имя *транслитом*", parse_mode = 'Markdown')
+    mesg = bot.send_message(message.chat.id, f"Для начала введите своё имя", parse_mode = 'Markdown')
     bot.register_next_step_handler(mesg, register_surname)
 def register_surname(message):
-    mesg = bot.send_message(message.chat.id, f"Теперь введите фамилию (также транслитом)")
-    data.add({'name': message.text})
+    mesg = bot.send_message(message.chat.id, f"Теперь введите фамилию")
+    en_text = translit(message.text, language_code='ru', reversed=True)
+    data.add({'name': en_text})
+    bot.register_next_step_handler(mesg, register_id)
+def register_id(message):
+    en_text = translit(message.text, language_code='ru', reversed=True)
+    data.add({"surname": en_text})
+    photo = open("studentid.png", 'rb')
+    textmesg = f'Напоследок введите номер студенческого билета'
+    mesg = bot.send_photo(message.chat.id, photo, caption = textmesg, parse_mode='Markdown')
     bot.register_next_step_handler(mesg, register_end)
 def register_end(message):
-    data.add({"surname": message.text})
+    data.add({"id": message.text})
     alphabet = string.ascii_letters + string.digits
     password = ''.join(secrets.choice(alphabet) for i in range(20))
     text = f"""
     Я проверил, и вы действительно не имеете почты в доменной зоне radiotech\\.su и являетесь студентом ЧРТ 
-    Ваша новая почта  {data.data['name']}\\.{data.data['surname']}@radiotech\\.su  Пароль \\- ||{password}||"""
-    #print(text)
+    Ваша новая почта  {data.data['name']}\\.{data.data['surname']}@radiotech\\.su  Пароль \\- ||{password}||
+    Ваша почта скоро будет активна и вход по ней будет доступен\\!
+    """
     bot.send_message(message.chat.id, text, parse_mode='MarkdownV2')
-
+    for_table = []
+    mail = f"{data.data['name']}.{data.data['surname']}@radiotech.su"
+    for_table.append([data.data['id'], mail, password, message.from_user.id, message.from_user.username])
+    export_csv = DataFrame(for_table).to_excel(r'data.xlsx', index=None, header=None)
 @bot.message_handler(commands=['recovery'])
 def recovery_mail(message):
     mesg = bot.send_message(message.chat.id, f'Вас понял. Для заявки на восстановление почты введите свой адрес электронной почты вида name.surname@radiotech.su')
