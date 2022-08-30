@@ -1,10 +1,9 @@
+import config
+from config import token
 import telebot
-import smtplib # Модуль для работы с почтой
 from telebot import types
 from openpyxl import load_workbook
 import time
-# import colorama
-# from colorama import Fore, Back, Style
 import secrets
 import string
 from datetime import date
@@ -12,7 +11,7 @@ import pandas as pd
 from pandas import DataFrame
 from transliterate import translit
 
-bot = telebot.TeleBot("5694829327:AAE6Sz6xEsbN7QHeq8-QjiaPtUtu-tUAOW0")
+bot = telebot.TeleBot(config.token)
 
 class Data(object):
     def __init__(self) -> None:
@@ -41,10 +40,12 @@ def register_name(message):
 def register_surname(message):
     mesg = bot.send_message(message.chat.id, f"Теперь введите фамилию")
     en_text = translit(message.text, language_code='ru', reversed=True)
+    en_text = en_text.lower()
     data.add({'name': en_text})
     bot.register_next_step_handler(mesg, register_id)
 def register_id(message):
     en_text = translit(message.text, language_code='ru', reversed=True)
+    en_text = en_text.lower()
     data.add({"surname": en_text})
     photo = open("studentid.png", 'rb')
     textmesg = f'Напоследок введите номер студенческого билета'
@@ -59,11 +60,16 @@ def register_end(message):
     Ваша новая почта  {data.data['name']}\\.{data.data['surname']}@radiotech\\.su  Пароль \\- ||{password}||
     Ваша почта скоро будет активна и вход по ней будет доступен\\!
     """
-    bot.send_message(message.chat.id, text, parse_mode='MarkdownV2')
-    for_table = []
+    chektext = f'*Проверка в базе данных учеников\\.\\.\\.*'
+    chekmsg = bot.send_message(message.chat.id, chektext, parse_mode='MarkdownV2')
+    time.sleep(5)
+    bot.edit_message_text(text, chekmsg.chat.id, chekmsg.message_id, parse_mode='MarkdownV2')
     mail = f"{data.data['name']}.{data.data['surname']}@radiotech.su"
-    for_table.append([data.data['id'], mail, password, message.from_user.id, message.from_user.username])
-    export_csv = DataFrame(for_table).to_excel(r'data.xlsx', index=None, header=None)
+    wb = openpyxl.open("registerdata.xlsx")
+    wb.active = 0
+    sheet = wb.active
+    sheet.append([data.data['id'], mail, password, message.from_user.id, message.from_user.username])
+    wb.save("registerdata.xlsx")
 @bot.message_handler(commands=['recovery'])
 def recovery_mail(message):
     mesg = bot.send_message(message.chat.id, f'Вас понял. Для заявки на восстановление почты введите свой адрес электронной почты вида name.surname@radiotech.su')
@@ -93,6 +99,7 @@ def prjlist(message):
     today = date.today()
     bot.send_message(message.chat.id, f'''Актуальные на *{today}* проекты:
     [Почтовый ТГ бот](https://t.me/mailcrt_bot)
+    [ATREI - Файлообменник с расширенными функциями для студентов техникума] (https://github.com/Foxius/atrei)
     ''', parse_mode='Markdown')
 bot.polling(none_stop=True, interval=0)
 try:
