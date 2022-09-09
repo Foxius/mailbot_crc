@@ -10,7 +10,8 @@ from datetime import date
 import pandas as pd
 from pandas import DataFrame
 from transliterate import translit
-
+import csv
+import openpyxl
 bot = telebot.TeleBot(config.token)
 
 class Data(object):
@@ -27,6 +28,7 @@ data:object=Data()
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    print("start: ", message.from_user.username)
     bot.send_message(message.chat.id, f"""Приветствую, `{message.from_user.username}`. Вы попали к почтовому боту ЧРТ
     Для регистрации почты введите команду /register
     Для восстановления пароля введите команду /recovery
@@ -35,24 +37,31 @@ def start(message):
 
 @bot.message_handler(commands=['register'])
 def register_name(message):
+    print("register: ",message.from_user.username)
+
     mesg = bot.send_message(message.chat.id, f"Для начала введите своё имя", parse_mode = 'Markdown')
     bot.register_next_step_handler(mesg, register_surname)
 def register_surname(message):
     mesg = bot.send_message(message.chat.id, f"Теперь введите фамилию")
     en_text = translit(message.text, language_code='ru', reversed=True)
     en_text = en_text.lower()
+    ru_text = message.text
     data.add({'name': en_text})
+    data.add({'ru_name': ru_text})
     bot.register_next_step_handler(mesg, register_id)
 def register_id(message):
     en_text = translit(message.text, language_code='ru', reversed=True)
+    ru_text = message.text
     en_text = en_text.lower()
-    data.add({"surname": en_text})
+    data.add({'surname': en_text})
+    data.add({'ru_surname': ru_text})
     photo = open("studentid.png", 'rb')
     textmesg = f'Напоследок введите номер студенческого билета'
     mesg = bot.send_photo(message.chat.id, photo, caption = textmesg, parse_mode='Markdown')
     bot.register_next_step_handler(mesg, register_end)
 def register_end(message):
-    data.add({"id": message.text})
+    id = message.text.upper()
+    data.add({"id": id})
     alphabet = string.ascii_letters + string.digits
     password = ''.join(secrets.choice(alphabet) for i in range(20))
     text = f"""
@@ -65,13 +74,24 @@ def register_end(message):
     time.sleep(5)
     bot.edit_message_text(text, chekmsg.chat.id, chekmsg.message_id, parse_mode='MarkdownV2')
     mail = f"{data.data['name']}.{data.data['surname']}@radiotech.su"
-    wb = openpyxl.open("registerdata.xlsx")
+    minimail = f"{data.data['name']}.{data.data['surname']}"
+    wb = openpyxl.open("data.xlsx")
     wb.active = 0
     sheet = wb.active
     sheet.append([data.data['id'], mail, password, message.from_user.id, message.from_user.username])
     wb.save("registerdata.xlsx")
+    firstname = data.data['ru_name']
+    lastname = data.data['ru_surname']
+    groups = 'student'
+    with open("registerusers.csv", "a", encoding='CP1251') as f:
+        writer = csv.writer(f, delimiter=",", lineterminator="\n")
+        #writer.writerow(['username', 'password', 'firstname', 'lastname', 'groups'])
+        writer.writerow([minimail, password, firstname, lastname, groups])
+
+
 @bot.message_handler(commands=['recovery'])
 def recovery_mail(message):
+    print("recovery: ", message.from_user.username)
     mesg = bot.send_message(message.chat.id, f'Вас понял. Для заявки на восстановление почты введите свой адрес электронной почты вида name.surname@radiotech.su')
     bot.register_next_step_handler(mesg, recovery_idphoto)
 def recovery_idphoto(message):
@@ -96,6 +116,7 @@ def recovery_accepting(message):
 
 @bot.message_handler(commands=['prjlist'])
 def prjlist(message):
+    print("prjlist: ", message.from_user.username)
     today = date.today()
     bot.send_message(message.chat.id, f'''Актуальные на *{today}* проекты:
     [Почтовый ТГ бот](https://t.me/mailcrt_bot)
