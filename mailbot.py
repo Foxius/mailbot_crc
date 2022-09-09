@@ -29,7 +29,7 @@ data:object=Data()
 @bot.message_handler(commands=['start'])
 def start(message):
     print("start: ", message.from_user.username)
-    bot.send_message(message.chat.id, f"""Приветствую, `{message.from_user.username}`. Вы попали к почтовому боту ЧРТ
+    bot.send_message(message.chat.id, f"""Приветствую, `{message.from_user.first_name}`. Вы попали к почтовому боту ЧРТ
     Для регистрации почты введите команду /register
     Для восстановления пароля введите команду /recovery
     Для предоставления списка проектов введите /prjlist
