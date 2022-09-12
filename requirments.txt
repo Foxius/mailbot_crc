@@ -1,0 +1,9 @@
+pytelegrambotapi
+openpyxl
+csv
+time
+secrets
+string
+datetime
+transliterate
+os
