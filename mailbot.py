@@ -13,7 +13,7 @@ bot = telebot.TeleBot(tok)
 os.system("cls")
 print("[LOG] Бот Запущен")
 class Data(object):
-    def init(self) -> None:
+    def __init__(self) -> None:
         self.data:dict={}
         self.i_obj2=0
         self.i_obj1=0
