@@ -1,14 +1,12 @@
 import telebot
 import openpyxl
 import csv
-import time
 import secrets
 import string
 from datetime import date
 from transliterate import translit
-from config import tok
-from config import adminID
-from config import path
+from config import *
+from hideconfig import tok
 import os
 import time
 logfile = open(path, 'a')
@@ -17,7 +15,7 @@ logfile.close()
 logfile = open (path, 'r')
 ti_m = os.path.getmtime(path)
 bot = telebot.TeleBot(tok)
-bot.send_document(adminID, logfile, caption = f'Лог от {time.ctime(ti_m)}')
+bot.send_document(adminID, logfile, visible_file_name = f'LOG-{time.ctime(ti_m)}.txt', caption = f'Лог от {time.ctime(ti_m)}')
 os.system("cls")
 print("[LOG] Бот Запущен")
 logfile.close()
@@ -46,6 +44,7 @@ def start(message):
     print(f"[LOG] [{message.from_user.username}] [start]")
     print(f"[LOG] [{message.from_user.username}] [start]", file = file)
     file.close()
+    bot.send_sticker(message.chat.id, histick)
     bot.send_message(message.chat.id, f"""Приветствую, {message.from_user.first_name}. Вы попали к почтовому боту ЧРТ
     Для регистрации почты введите команду /register
     Для восстановления пароля введите команду /recovery
@@ -103,6 +102,7 @@ def register_end(message):
     chektext = f'*Проверка в базе данных учеников\\.\\.\\.*'
     chekmsg = bot.send_message(message.chat.id, chektext, parse_mode='MarkdownV2')
     time.sleep(5)
+    bot.send_sticker(message.chat.id, helpstick)
     bot.edit_message_text(text, chekmsg.chat.id, chekmsg.message_id, parse_mode='MarkdownV2')
     mail = f"{data.data['name']}.{data.data['surname']}@radiotech.su"
     minimail = f"{data.data['name']}.{data.data['surname']}"
@@ -142,6 +142,7 @@ def recovery_accepting(message):
     print(f"[LOG] [{message.from_user.username}] [recovery_accepting]", file = file)
     file.close()
     data.add({"id": message.text})
+    bot.send_sticker(message.chat.id, helpstick)
     bot.send_message(message.chat.id, f"Заявка на восстановление пароля передана администрации. Ожидайте")
     mail = data.data['mail']
     id = data.data['id']
@@ -150,7 +151,7 @@ def recovery_accepting(message):
     *Почта* - {mail}
     *Номер* - {id}
     *TGUN* - @{message.from_user.username}
-    *TGID* - {message.from_user.id}
+    *TGID* - `{message.from_user.id}`
     """, parse_mode='Markdown')
 
 @bot.message_handler(commands=['prjlist'])
@@ -177,13 +178,32 @@ def helpdescription(message):
     print(f"[LOG] [{message.from_user.username}] [helpdescription]", file = file)
     file.close()
     data.add({"description": message.text})
+    bot.send_sticker(message.chat.id, fixstick)
     bot.send_message(message.chat.id, f"""Наши администраторы только что получили уведомление от вас. Ожидайте""")
     bot.send_message(adminID, f"""
     Призыв о помощи от {message.from_user.first_name}
     *TGUN* - @{message.from_user.username}
-    *TGID* - {message.from_user.id}
+    *TGID* - `{message.from_user.id}`
     *Описание* - {data.data['description']}
     """, parse_mode = "Markdown")
+
+@bot.message_handler(commands=['answ'])
+def answerstart(message):
+    if message.from_user.id in moderID:
+        id = bot.reply_to(message, f"Хорошо, скопируйте id из заявки и отправьте следующим сообщением")
+        bot.register_next_step_handler(id, answertext)
+    else:
+        bot.reply_to(message, f"Ты походу не админ как бы")
+def answertext(message):
+    data.add({'tgid': message.text})
+    text = bot.reply_to(message, f"Теперь введите текст для отправки сообщения")
+    bot.register_next_step_handler(text, answersend)
+def answersend(message):
+    data.add({'message': message.text})
+    bot.reply_to(message, f"Сообщение отправлено")
+    userid = data.data['tgid']
+    msg = data.data['message']
+    bot.send_message(userid, f'Сообщение от администратора: \n \n {msg}')
 bot.polling(none_stop=True, interval=0)
 try:
     bot.polling(none_stop=True)
