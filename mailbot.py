@@ -97,7 +97,7 @@ def register_end(message):
     password = ''.join(secrets.choice(alphabet) for i in range(20))
     text = f"""
     Я проверил, и вы действительно не имеете почты в доменной зоне radiotech\\.su и являетесь студентом ЧРТ 
-    Ваша новая почта  {data.data['name']}\\.{data.data['surname']}@radiotech\\.su  Пароль \\- {password}
+    Ваша новая почта  {data.data['name']}\\.{data.data['surname']}@radiotech\\.su  Пароль \\- ||{password}||
     Ваша почта скоро будет активна и вход по ней будет доступен\\!
     """
     chektext = f'*Проверка в базе данных учеников\\.\\.\\.*'
