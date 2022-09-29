@@ -204,8 +204,10 @@ def answersend(message):
     userid = data.data['tgid']
     msg = data.data['message']
     bot.send_message(userid, f'Сообщение от администратора: \n \n {msg}')
-bot.polling(none_stop=True, interval=0)
-try:
-    bot.polling(none_stop=True)
-except Exception as e:
-    logger.exception("Fail startup:", e)
+    
+    
+while True:
+    try:
+        bot.polling()
+    except:
+        continue
